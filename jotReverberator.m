@@ -38,21 +38,24 @@ classdef jotReverberator < audioPlugin
 
         %----------------------------------------------
         % Define the size of the circular buffer
-        Buffer_size = 192001;
-        CircularBuffer = zeros(Buffer_size,2);
-        BufferIndex = 1;
+        Buffer_size = 192001;                   % buffer size
+        CircularBuffer = zeros(Buffer_size,2);  % zero pad circular buffer
+        BufferIndex = 1;                        % buffer index
         NSamples = 0;
+
+        Fs = 44100;                             % sample frequency
 
         %----------------------------------------------
         % Define Feedback Matrix (householder, N=16)
         A4 =  0.5*[1 -1 -1 -1; -1 1 -1 -1; -1 -1 1 -1; -1 -1 -1 1];
         A_holder = [A4 -A4 -A4 -A4; -A4 A4 -A4 -A4; -A4 -A4 A4 -A4; -A4 -A4 -A4 A4]; % matrix of unitary gain
 
-        Delayline = zeros(16,Buffer_size); % 16 Delay lines
-        householder = A_holder*Delayline; % householder matrix
+        Delayline = zeros(16,Buffer_size);      % 16 Delay lines
+        householder = A_holder*Delayline;       % householder matrix
 
         %----------------------------------------------
-        del = [661 970 1323 4410];
+        del = [661 970 1323 4410];              % init delay lines for early reflections taps
+        g = []                                  % init gain for early reflections taps
 
 
     end
@@ -80,41 +83,101 @@ classdef jotReverberator < audioPlugin
             out = zeros(size(in));
             writeIndex = plugin.BufferIndex;
             readIndex = writeIndex - plugin.NSamples;
-
             if readIndex <= 0
                readIndex = readIndex + Buffer_size;
             end
-        end
-
-
-
-
-        %----------------------------------------------
-        %%%%%%%%%%%%% EARLY REFLECTIONS %%%%%%%%%%%%%%
-        %----------------------------------------------
-        function y = delay(in,del)
-            % Early reflections function using the delay lines for
-            % a time period lower than 33ms
-            for i = 1:4
-                h = dfilt.delay(del(i));
-                y(i) = filter(h,in);
-                H(i) = [y(i)];
             end
-             H = H';
-        end
+
+            %----------------------------------------------
+            %%%%%%%%%%%% Early Reflections %%%%%%%%%%%%%%%%
+
+            for i = 1:size(in,1)
+                plugin.CircularBuffer(writeIndex,:) = in(i,:);
+
+                % Lowpass filter at the input of the reverberator
+                lpf_in = plugin.lpf(in,decayHighRatio,Fs)
+
+                % init delaylines tap for early reflection and compute them
+                % input signal is the lowpass filtered signal
+                H = [];
+                for i = 1:4
+                    z(i) = plugin.z(lpf_in,del(i));
+                    H(i) = [z(i)];
+                end
+
+                % Sum and add attenuator to all the delay lines
+                Z = z(1)*0.9+z(2)*0.6+z(3)*0.4+z(4)*0.2;
+
+                % Signal goes through an allpass filter
+                early_ref = plugin.apf(Z,g,N)*apf_g;
+
+
+                out(i,:) = in(i,:) + echo * plugin.Gain;
+
+                writeIndex = writeIndex + 1;
+                if writeIndex > 192001
+                    writeIndex = 1;
+                end
+
+                readIndex = readIndex + 1;
+                if readIndex > 192001
+                    readIndex = 1;
+                end
+            end
+
+
+            end
+
+
+
+
+
+
+
+
+
+
+            %----------------------------------------------
+
+
 
 
 
         %----------------------------------------------
-        function lpf = lowpass()
+        function lpf = lowpass(in,decayHighRatio,fs)
             % 2nd order lowpass filter with cutoff adjustable by the user
             % normalized for a range of [0 Fs/2]
             [b,a] = butter(2,decayHighRatio/(fs/2));
+            LPF = filter(b,a,in);
+        end
+
+        %----------------------------------------------
+        function z = delay(in,del)
+            % Early reflections function using the delay lines for
+            % a time period lower than 33ms
+                h = dfilt.delay(del);
+                y = filter(h,in);
+            end
+
+        end
+
+        %----------------------------------------------
+        function apf = Allpass(in,g,N )
+            z_padding = zeros(1, N-1);
+            b = [-1 z_padding (1+g)];
+            a = [1 z_padding -g];
+            APF = filter(b, a, in);
         end
 
 
 
-        %----------------------------------------------
+
+
+
+
+
+        %---------------------------------------------%
+        %---------------------------------------------%
         function reset(~)
             % This section contains instructions to reset the plugin
             % between uses, or when the environment sample rate changes.
