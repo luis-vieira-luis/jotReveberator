@@ -8,6 +8,7 @@ Fs = 44100;
 Ns = 2048; % number of points for fft
 
 sig = [1; zeros(3999,1)];
+%[sig,fs] = audioread('flute_music.wav');
 sig1 = jungle_L; % original sig
 
 
@@ -17,44 +18,8 @@ freq = (0:Ns-1)*(Fs/Ns); % scaling frequency range
 mag = abs(sig_fft);
 mag_db = 20*log10(mag);
 
-%% Lowpass filter
-
-N=2;
-Fpass = 19300;
-Fstop = 19600;
-lpf = Lowpass(sig,Fs,N,Fpass,Fstop);
-
-%f1 = ffourier(Fs,lpf);
-
-%% Delay lines
-% in samples
-
-del = 661;
-del1 = 970;
-del2 = 1323;
-del3 = 4410;
-
-z = delay(lpf,del);
-z1 = delay(lpf,del1);
-z2 = delay(lpf,del2);
-z3 = delay(lpf,del3);
-
-Z = z*0.9+z1*0.6+z2*0.4+z3*0.2;
-
-%% Allpass filter
-
-g = 0.4;
-N = 2;
-ap = Allpass(Z,g,N);
-
-%% Early Reflections
-
-early_ref = ap*0.6;    % early reflections output
-
-%%
-close all;
-
-[freq_f,mag_db_f] = ffourier(Fs,early_ref); % fft analysis
+%-----------------------------------------------------------------------------%
+%% Plotting
 
 figure(3)
 subplot(311)
@@ -68,19 +33,59 @@ title('Jungle - Time Domain (samples)')
 subplot(313)
 semilogx(freq,mag_db)
 axis([20 20000 -100 0])
-hold on
-% semilogx(freq_f,mag_db_f)
-% title('ImpResp / Jugle - FFT')
-axis([20 20000 -100 0])
+title('Jugle - FFT')
+
 grid on
 
-%% Feedback Delay Network
+%-----------------------------------------------------------------------------%
+%% Early Reflections
+%-----------------------------------------------------------------------------%
 
-N_fnd = 3;
-alpha = -2/N_fnd;
-FDN = MM(early_ref,alpha);
+%% Lowpass filter
+% attenuation at high frequency
+roomHighFreq = 3000;
+LPF = Lowpass(sig,roomHighFreq,Fs);
 
+%-----------------------------------------------------------------------------%
+%% Delay lines
+% in samples
 
+del = [661 970 1323 4410]; % tap delaylines values
+c = [0.8 0.5 0.3 0.1];     % delay attenuation coefficients
+
+Z = [];
+
+for i = 1: 4
+    y = c(i)*delay(LPF,del(i));
+    Z(i,:) = [y]; % delay lines
+end
+
+% TDL
+TDL = sum(Z)';
+
+%-----------------------------------------------------------------------------%
+%% Allpass filter
+
+g = 0.4;
+N = 2;
+APF = Allpass(TDL,g,N);
+
+%-----------------------------------------------------------------------------%
+direcSig = APF*0.6;    % early reflections output
+
+%-----------------------------------------------------------------------------%
+%% FEEDBACK DELAY NETWORK
+%-----------------------------------------------------------------------------%
+% H(z) = N / (3 - Sum(g*Z(M)))
+
+M = [457 1452 353];
+g_M = 0.7;
+
+FDN = filterbank(Z,3,M,g_M);
+
+%-----------------------------------------------------------------------------%
+%% LATE REVERBERATION
+%-----------------------------------------------------------------------------%
 %% Absorbent Allpass Filter
 
 g1 = 0.7;

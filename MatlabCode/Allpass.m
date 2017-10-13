@@ -1,4 +1,4 @@
-function out = Allpass( in, g, N )
+function apf = Allpass( in, g, N )
 % Schroeder allpass filter
 % INPUT
 % in  : input signal
@@ -10,12 +10,11 @@ function out = Allpass( in, g, N )
 z_padding = zeros(1, N-1);
 b = [-1 z_padding (1+g)];
 a = [1 z_padding -g];
-out = filter(b, a, in);
+apf = filter(b, a, in);
 
-%h = dsp.IIRFilter('Numerator',b,'Denominator',a); 
+%h = dsp.IIRFilter('Numerator',b,'Denominator',a);
 %out = step(h,in);
 
 % freqz(h)
 
 end
-
