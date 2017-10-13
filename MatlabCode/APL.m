@@ -1,5 +1,10 @@
-function out = APL(M, sig,fc,fs,a,g,N)
+function out = APL(M, sig,fc,fs,att,g)
 % Filtered signal : Delay + Lowpass + Gain
+% M : delay length
+% fc : cut-off frequency
+% fs : sample frequency
+% att : attenuation 
+% g : feedback/feedforward coefficient
 
 xdel = zeros(M,1);  % delay with length M
 Z = [xdel' sig'];   % signal delayed
@@ -12,7 +17,7 @@ fSig = a*LPF;
 fb = 0;
 Y = [];
 
-for i = 1:N
+for i = 1:length(sig)
 
   y = g*sig(i)+fSig(i)+fb(i);
   fb = -g*y;
