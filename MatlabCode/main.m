@@ -60,7 +60,7 @@ for i = 1: 4
     Z(i,:) = [y]; % delay lines
 end
 
-% TDL
+% Tapped delay lines (y(n) = b0x(n)+bm1x(n-m1)+bm2x(n-m2)+bm3x(n-m3)
 TDL = sum(Z)';
 
 %-----------------------------------------------------------------------------%
@@ -71,7 +71,7 @@ N = 2;
 APF = Allpass(TDL,g,N);
 
 %-----------------------------------------------------------------------------%
-direcSig = APF*0.6;    % early reflections output
+early_ref = APF*0.6;    % early reflections output
 
 %-----------------------------------------------------------------------------%
 %% FEEDBACK DELAY NETWORK
@@ -86,46 +86,53 @@ FDN = filterbank(Z,3,M,g_M);
 %-----------------------------------------------------------------------------%
 %% LATE REVERBERATION
 %-----------------------------------------------------------------------------%
-%% Absorbent Allpass Filter
+% Allpass filters in series
 
-g1 = 0.7;
-atten = 0.1;
-del = [2221 1993 1723 227 173 569];
-Fpass_a = 15000;
-Fstop_a = 16000;
+Mslength = [78189 53096 39469 28047 18036 14200 6615]; % absorbent allpass delay length
+fc = 18000; % absorbent allpass cut-off frequency (HF reference value)
 
-%% Late Reverberation
+Diffusion  = 140;
+maxallpass = 0.61803; % solution to 1−x^2 = x
+g = maxallpass*(Diffusion/100); % All-Pass Coefficient
 
-abp1 = ABPF(FDN,atten);
-abp2 = ABPF(abp1,atten);
-abp3 = ABPF(abp2,atten);
-abp4 = ABPF(abp3,atten);
+Tr = 2000; % decay time in ms
+M_length = [1772 1203 894 635 409 321 150]; % delay lengths in ms
+aDb = -60*(M_length/Tr);
+att = 10.^(aDb/20); % Absorbent Gain
 
-z4 = delay(abp4,14000);
-lpf_j = Lowpass(z4,Fs,2,16000,17000);
+HFratio = 0.3;
+dBGainFC = -60*(M_length/(HFratio*Tr));
+G = 10.^(dBGainFC/20);
 
-abp5 = 0.5*ABPF(lpf_j,atten);
-abp6 = ABPF(abp5,atten);
+if G == 1
+    b = 0;
+else
+    omega = cos(2*pi*fc/Fs);
+    A = 8.*G - 4.*G.*G-9.*G.*omega + 4.*G.*G.*omega*omega;
+    b = (2.*G.*omega - 2 + sqrt(A))/(2.*G-2);
+end
 
-tapp = abp1+abp2+abp3+abp4+abp5+abp6;
+apl = []; % initialize vector
 
-late_rev = tapp + abp6 * 0.8;
+for i = 1:length(Mslength)
 
-%%
+    xdel = zeros(Mslength(i),1);  % delay with length M
+    zero_endpad = zeros((max(Mslength)-Mslength(i)),1);
+    Z = [xdel' sig' zero_endpad'];   % signal delayed
 
-SUM_out = early_ref + late_rev;
+    [~,a] = butter(2,fc/(Fs/2)); % lowpass coefficients
+    LPF = filter(b,a,Z); % lowpass filter
 
+    zl = max(Mslength);
+    zeros_pad = zeros(zl,1)';
+    Sig_pad = [sig'  zeros_pad]; % resize input size to match the filtered signal
 
-[freq_f_s,mag_db_f_s] = ffourier(Fs,SUM_out);
+    y1 = g.*Sig_pad; % direct signal
+    y2 = att(i).*LPF; % filtered signal
+    y = y1+y2; % g.x(n) + filtered signal (delay+lowpass+att)
 
-figure(4)
-subplot(211)
-plot(SUM_out)
-subplot(212)
-semilogx(freq_f_s,mag_db_f_s)
-axis([20 20000 -100 0])
+    fb = y*(-g); % feedback signal
+    abf = [Sig_pad (y - fb)]; % absorbent allpass filter output
+    apl(:,i) = [abf];
 
-
-
-
-%soundsc(SUM_out,Fs)
+end

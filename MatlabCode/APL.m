@@ -1,31 +1,26 @@
-function out = APL(M, sig,fc,fs,att,g)
+function out = APL(M, sig,fc,Fs,att,g,b)
+% absorbent allpass filter
 % Filtered signal : Delay + Lowpass + Gain
-% M : delay length
+% M : delay length in samples
 % fc : cut-off frequency
 % fs : sample frequency
-% att : attenuation 
-% g : feedback/feedforward coefficient
+% att : attenuation coefficient
+% g : feedback and feedforward coefficient
 
 xdel = zeros(M,1);  % delay with length M
 Z = [xdel' sig'];   % signal delayed
 
-[b,a] = butter(2,fc/(fs/2));
-LPF = filter(b,a,Z);
-
-fSig = a*LPF;
-
-fb = 0;
-Y = [];
-
-for i = 1:length(sig)
-
-  y = g*sig(i)+fSig(i)+fb(i);
-  fb = -g*y;
-
-  Y(i,:) = y + fb;
+[~,a] = butter(2,fc/(Fs/2)); % lowpass coefficients
+LPF = filter(b,a,Z); % lowpass filter
 
 
+zeros_pad = zeros(M,1);
+Sig_pad = [sig'  zeros_pad']; % resize input size to match the filtered signal
+y = g.*Sig_pad' + att.*LPF'; % g.x(n) + filtered signal (delay+lowpass+att)
 
-end
+
+fb = y*(-g); % feedback signal
+
+out = y - fb; % absorbent allpass filter output
 
 end
