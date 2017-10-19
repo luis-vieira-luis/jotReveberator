@@ -1,11 +1,11 @@
 function z = delayZ(sig,M,g)
-%DELAY 
-% x: input signal
-% dt: delaytime in samples
+% DELAY
+% sig: input signal
+% M: delaytime in samples
 % g: gain coefficient
-% out: delayed signal added with input signal
+% z: delayed signal added with input signal
 
 xdel = zeros(M,1);
 xnew = [xdel' sig'];
-z = g*xnew;
+z = g.*xnew;
 end

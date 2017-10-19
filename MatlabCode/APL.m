@@ -1,26 +1,39 @@
-function out = APL(M, sig,fc,Fs,att,g,b)
+function out = APL(M_length,Tr,HFratio,Diffusion,fc,Fs,in)
 % absorbent allpass filter
-% Filtered signal : Delay + Lowpass + Gain
-% M : delay length in samples
+% M_length : delay length in ms
 % fc : cut-off frequency
-% fs : sample frequency
-% att : attenuation coefficient
+% HFRatio : ratio of the decay time at high freq
+% att : attenuation coefficient (associated with delay and LPF)
 % g : feedback and feedforward coefficient
 
-xdel = zeros(M,1);  % delay with length M
-Z = [xdel' sig'];   % signal delayed
+%------------------------------------------------------------------------%
+% calculate coeff 'b'
 
-[~,a] = butter(2,fc/(Fs/2)); % lowpass coefficients
-LPF = filter(b,a,Z); % lowpass filter
+maxallpass = 0.61803; % solution to 1−x^2 = x
+g = maxallpass*(Diffusion/100); % All-Pass Coefficient
+
+aDb = -60*(M_length/Tr); % attenuation for T60
+att = 10.^(aDb/20); % Absorbent Gain
+
+dBGainFC = -60*(M_length/(HFratio*Tr));
+G = 10.^(dBGainFC/20); %
 
 
-zeros_pad = zeros(M,1);
-Sig_pad = [sig'  zeros_pad']; % resize input size to match the filtered signal
-y = g.*Sig_pad' + att.*LPF'; % g.x(n) + filtered signal (delay+lowpass+att)
+if G == 1.0
+    B = 0.0;
+else
+    omega = cos(2*pi*(fc/Fs));
+    A = 8*G - 4*G*G-9*G*omega + 4*G*G*omega*omega;
+    B = (2*G*omega - 2 + sqrt(A))/(2*G-2);
+end
 
+%------------------------------------------------------------------------%
+% creating filter
 
-fb = y*(-g); % feedback signal
+z_padding = zeros(1, (M_length-3));
+b = [g -g*B z_padding (att-att*B)];
+a = [1 -B  z_padding (-g*att-g*att*B)];
+out = filter(b, a, in);
 
-out = y - fb; % absorbent allpass filter output
 
 end

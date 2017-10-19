@@ -12,9 +12,4 @@ b = [-1 z_padding (1+g)];
 a = [1 z_padding -g];
 apf = filter(b, a, in);
 
-%h = dsp.IIRFilter('Numerator',b,'Denominator',a);
-%out = step(h,in);
-
-% freqz(h)
-
 end

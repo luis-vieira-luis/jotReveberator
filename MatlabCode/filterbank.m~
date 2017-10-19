@@ -1,0 +1,19 @@
+function fb = filterbank(sig,P,g)
+% Filter bank with N parallel combfilters
+% N : order of the filter bank
+% M : matrix with z(n) delay lenths
+% g : gain
+
+l = length(sig);
+Stack = [];
+for i = 1:P
+    
+    for n = 1:N
+        p_comb = (P*g*Z(i))/(1-g*Z(i)+(2/N)*g*Z(i)); % transfer function for N parallel combfilters
+      
+    end
+end
+
+filterSum = sum(Stack); % parallel comb filters
+
+end

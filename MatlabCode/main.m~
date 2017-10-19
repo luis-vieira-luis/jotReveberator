@@ -105,12 +105,9 @@ early_ref = APF*0.6;    % early reflections output
 %
 % H = bn.*(cn'.*(D-A))+d;
 
+FDN = filterbank(Z,M,g_M);
 
-for i = 1:length(Z)
-    
-FDN = filterbank(Z(i),M(i),g_M(i));
 
-end
 
 
 

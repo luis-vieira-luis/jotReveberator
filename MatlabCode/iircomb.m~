@@ -1,0 +1,20 @@
+function comb = iircomb(sig,Delayline)
+% IIR combfilter
+% transfer function: (g*Z(-m)) / (1-g*Z(-m)
+
+
+filter
+
+
+
+l = lenght(sig);
+g = 0.5; % gain
+%Delayline = zeros(l,1); % memory allocation for length 10
+
+for n = 1:l
+    y= sig(n)+g*Delayline;
+    comb(i,:) = [y];
+    
+end
+
+end
