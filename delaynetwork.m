@@ -12,11 +12,12 @@ fs=44100;
 gain=0.97; 
 
 % Create an impulse
-x = zeros(1,1*fs); x(1) = 1;
+%x = zeros(1,1*fs); x(1) = 1;
+x = rand(1,1*fs);
 y = zeros(1,fs);
 b = [1 1 1 1];
 c = [0.8 0.8 0.8 0.8];
-
+%%
 % Feedback matrix
 a(1,:)=[0 1 1 0];
 a(2,:)=[-1 0 0 -1];
