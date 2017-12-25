@@ -1,4 +1,4 @@
-function [y,b,a]=tdl(x,n,g,d)
+function outTapDelay = tapDelaylines(in,n,g,d)
 
 %This is a tapped delay line function.
 %
@@ -8,7 +8,6 @@ function [y,b,a]=tdl(x,n,g,d)
 %      n = the number of taps
 %      g = a vector which contains the gain of each tap
 %      d = a vector which contains the delay length of each tap
-
 %      y = the output signal
 %      b = the numerator coefficients of the transfer function
 %      a = the denominator coefficients of the transfer function
@@ -28,5 +27,8 @@ end
 
 a=1;
 
-%filter the input signal
-y=filter(b,a,x);
+tapdel = dsp.FIRFilter('Structure','Direct form',...
+    'Numerator',b,...
+    'Denominator',a);
+
+outTapDelay = tapdel(in);

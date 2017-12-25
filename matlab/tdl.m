@@ -8,7 +8,6 @@ function [y,b,a]=tdl(x,n,g,d)
 %      n = the number of taps
 %      g = a vector which contains the gain of each tap
 %      d = a vector which contains the delay length of each tap
-
 %      y = the output signal
 %      b = the numerator coefficients of the transfer function
 %      a = the denominator coefficients of the transfer function

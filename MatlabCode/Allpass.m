@@ -13,8 +13,8 @@ if g>=1
 end
 
 %Set the b and a coefficients of the transfer function depending on g and d.
-b=[g zeros(1,m-1) 1];
-a=[1 zeros(1,m-1) g];
+b=[g zeros(1,m) 1];
+a=[1 zeros(1,m) g];
 
 %filter the input signal
 apf=filter(b,a,in);
