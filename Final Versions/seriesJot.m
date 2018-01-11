@@ -226,6 +226,15 @@ hcas6 = dfilt.cascade(hcas5,h7);
 
 y7 = zeros(1,length(in));
 
+
+% feedback matrix 
+
+gainFDN = 0.9999; % g < 1; editable value for unitary poles in the matrix
+gFeedbackMatrix = gainFDN/sqrt(2);
+r = 0;
+% unitary matrix
+U = gFeedbackMatrix.*[sin(r) cos(r); -cos(r) sin(r)];
+
 for i = 1:12
 
     in = delayedInputTail + y7;

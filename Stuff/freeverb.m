@@ -1,4 +1,4 @@
-classdef Freeverb < audioPlugin
+classdef freeverb < audioPlugin
     % Freeverb by Nikolaj Andersson
     %   This is an Audio System Toolbox implementation of the Freeverb
     %   created by Jezar at Dreampoint - http://www.dreampoint.co.uk
@@ -61,28 +61,8 @@ classdef Freeverb < audioPlugin
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     methods
-        function p = Freeverb
+        function p = freeverb
             % Comb filter implementation from dsp class. Inspired by audioexample.FreeverbReverberator
             p.Lowpass = dsp.IIRFilter('Numerator',p.bLow, 'Denominator', p.aLow);
             p.CombDelay = dsp.Delay([p.CombDelayLength, p.CombDelayLength + p.stereospread]);
@@ -141,6 +121,7 @@ classdef Freeverb < audioPlugin
             reset(p.AllpassR3);
             reset(p.AllpassR4);
         end
+        
         function out = parallelComb(p, x) % function from audioexample.FreeverbReverberator, needed for efficiency
             l = size(x,1); % if the size of x is lower than 128 samples
             p.combBuffer(1:l) = sum(x,2); % sum left and right and add them to the buffer
@@ -177,7 +158,8 @@ classdef Freeverb < audioPlugin
                 end
             end
             % Cut of buffers to obtain original length again.
-            left = p.WetBuffer(1:p.SamplesPerFrame,1); right = p.WetBuffer(1:p.SamplesPerFrame,2);
+            left = p.WetBuffer(1:p.SamplesPerFrame,1); 
+            right = p.WetBuffer(1:p.SamplesPerFrame,2);
 
             % Calculate separation between left and right, 0 and 1 yields maximum separation,
             % 0.5, both sides are send to both speakers
